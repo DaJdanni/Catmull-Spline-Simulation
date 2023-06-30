@@ -139,6 +139,9 @@
   <ItemGroup>
     <ClInclude Include="Engine.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="..\..\..\..\Downloads\Times-New-Roman\Times New Roman\TimesNewRoman.ttf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

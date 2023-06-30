@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <ctime>
+#include <chrono>
+#include <thread>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
@@ -20,8 +22,20 @@ class Engine {
 	sf::Vector2i mouseScreenPosition;
 	sf::Vector2f mousePosView;
 
+	std::vector<sf::Vector2i> mousePositions;
+
+	sf::Font TextFont;
+
+	int numberOfPoints = 0;
+
+	bool leftClickDB = false;
+	bool rightClickDB = false;
+
 	void initalizeVariables();
 	void initalizeWindow();
+	void onLeftClick(sf::Vector2i mousePosition);
+	void onRightClick();
+	void clearPoints();
 
 public:
 

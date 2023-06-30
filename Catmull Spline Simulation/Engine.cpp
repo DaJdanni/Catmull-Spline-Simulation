@@ -1,10 +1,9 @@
 #include "Engine.h"
-
 // Initalizers:
 
 void Engine::initalizeVariables() {
 	this->window = nullptr;
-	// Init variables used in program:
+	this->TextFont.loadFromFile("../Resource Files/TimesNewRoman.tff");
 }
 
 void Engine::initalizeWindow() {
@@ -48,6 +47,10 @@ void Engine::pollEvents() {
 				this->window->close();
 			break;
 		}
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			this->onLeftClick(this->mouseWindowPosition);
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
+			this->onRightClick();
 	}
 }
 
@@ -83,9 +86,9 @@ void Engine::render() { // Rendering
 // Updaters:
 
 void Engine::updateConsole() {
-	std::cout << "Current Mouse Position (relative to window): " <<
+	/*std::cout << "Current Mouse Position (relative to window): " <<
 		this->mouseWindowPosition.x << " "
-		<< this->mouseWindowPosition.y << std::endl;
+		<< this->mouseWindowPosition.y << std::endl;*/
 
 	/*std::cout << "Current Mouse Position (relative to screen): " <<
 		this->mouseScreenPosition.x << " "
@@ -105,4 +108,87 @@ void Engine::updateMousePositions() {
 	this->mouseWindowPosition = sf::Mouse::getPosition(*this->window);
 	this->mousePosView = this->window->mapPixelToCoords(this->mouseWindowPosition);
 	this->mouseScreenPosition = sf::Mouse::getPosition();
+}
+
+// Catmull Logic:
+
+sf::Vector2f resultant(sf::Vector2i p, sf::Vector2i q) {
+	return static_cast<sf::Vector2f>(p) - static_cast<sf::Vector2f>(q);
+}
+
+double toMagnitude(sf::Vector2i p, sf::Vector2i q) {
+	return (sqrt(
+		pow(abs((p.x - q.x)), 2.f) +
+		pow(abs((p.y - q.y)), 2.f)
+	));
+}
+
+sf::Vector2i formula(sf::Vector2i p0, sf::Vector2i p1, sf::Vector2i p2, sf::Vector2i p3, float t) {
+
+	// you'll notice a lot of static casts usage but basically:
+	// floating vectors are needed since they can be manipulated by arthimetic stuff or something like that
+	// unlike Vector2i (integer vector), I can actually multiply a vector by its magnitude
+	// so thats what all those static casts are doing
+	// a lot of this math comes from online sources and my friend Doctor Cringe (thanks) so i'm not really smart
+	// just rewriting lua into c++ (but horribly)
+
+	float alpha = 0.5;
+	float tension = 0.f;
+
+	float t01 = static_cast<float>(pow(toMagnitude(p1, p0), alpha));
+	float t12 = static_cast<float>(pow(toMagnitude(p1, p2), alpha));
+	float t23 = static_cast<float>(pow(toMagnitude(p2, p3), alpha));
+
+	sf::Vector2f m1 = (1.0f - tension) * (resultant(p2, p1) + t12 * (((resultant(p1, p0) / t01) - resultant(p2, p0)) / (t01 + t12)));
+	sf::Vector2f m2 = (1.0f - tension) * (resultant(p2, p1) + t12 * (((resultant(p3, p2) / t23) - resultant(p3, p1)) / (t12 + t23)));
+
+	sf::Vector2f c0 = 2.0f * resultant(p1, p2) + m1 + m2;
+	sf::Vector2f c1 = -3.0f * resultant(p1, p2) - (2.0f * m1) - m2;
+	sf::Vector2f c2 = m1;
+	sf::Vector2f c3 = static_cast<sf::Vector2f>(p1); // convert integer vector to floating vector for manipulation
+
+	sf::Vector2f point = c0 * static_cast<float>(pow(t, 3)) + c1 * static_cast<float>(pow(t, 2)) + c2 * t + c3;
+
+	return static_cast<sf::Vector2i>(point);
+}
+
+void Engine::onLeftClick(sf::Vector2i mousePosition) {
+
+	if (this->leftClickDB == true) { return; }
+
+	this->leftClickDB = true;
+
+	this->numberOfPoints += 1;
+
+	this->mousePositions.push_back(mousePosition);
+
+	std::cout << "Added a point..." << std::endl;
+
+	std::chrono::milliseconds dura(250);
+
+	std::this_thread::sleep_for(dura);
+
+	this->leftClickDB = false;
+}
+
+void Engine::onRightClick() {
+
+	if (this->rightClickDB == true) { return; }
+
+	this->rightClickDB = true;
+
+	size_t size = this->mousePositions.size();
+
+	std::cout << size << std::endl;
+
+	if (size >= 2) {
+		sf::Vector2i p0 = sf::Vector2i(this->mousePositions.front().x - 50, this->mousePositions.front().y);
+		sf::Vector2i p3 = sf::Vector2i(this->mousePositions.back().x + 50, this->mousePositions.back().y);
+	}
+
+	std::chrono::milliseconds dura(250);
+
+	std::this_thread::sleep_for(dura);
+
+	this->rightClickDB = false;
 }
