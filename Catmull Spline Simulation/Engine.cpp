@@ -3,13 +3,13 @@
 
 void Engine::initalizeVariables() {
 	this->window = nullptr;
-	//this->TextFont.loadFromFile("TimesNewRoman.tff");
+	this->TextFont.loadFromFile("Resource Files/TimesNewRoman.tff");
 }
 
 void Engine::initalizeWindow() {
 	// video settings
-	this->videoMode.width = 1920;
-	this->videoMode.height = 1080;
+	this->videoMode.width = 1200;
+	this->videoMode.height = 700;
 	//this->videoMode.getDesktopMode() gets window resolution
 
 	this->window = new sf::RenderWindow(this->videoMode, "Catmull Splines", sf::Style::Titlebar | sf::Style::Close);
@@ -24,7 +24,6 @@ void Engine::initalizePointConfig() {
 	this->Point.setScale(sf::Vector2f(2.f, 2.f));
 	this->Point.setOrigin(size, size);
 }
-
 
 // SFML Stuff:
 
@@ -177,22 +176,22 @@ sf::Vector2f formula(sf::Vector2f p0, sf::Vector2f p1, sf::Vector2f p2, sf::Vect
 	// a lot of this math comes from online sources and my friend Doctor Cringe (thanks) so i'm not really smart
 	// just rewriting lua into c++ (but horribly)
 
-	float alpha = 0.5;
+	float alpha = 0.5f;
 	float tension = 0.f;
 
 	float t01 = static_cast<float>(pow(toMagnitude(p1, p0), alpha));
 	float t12 = static_cast<float>(pow(toMagnitude(p1, p2), alpha));
 	float t23 = static_cast<float>(pow(toMagnitude(p2, p3), alpha));
 
-	sf::Vector2f m1 = (1.0f - tension) * (resultant(p2, p1) + t12 * (((resultant(p1, p0) / t01) - resultant(p2, p0)) / (t01 + t12)));
-	sf::Vector2f m2 = (1.0f - tension) * (resultant(p2, p1) + t12 * (((resultant(p3, p2) / t23) - resultant(p3, p1)) / (t12 + t23)));
+	sf::Vector2f m1 = (1.0f - tension) * (resultant(p2, p1) + t12 * (resultant(p1, p0) / t01 - resultant(p2, p0) / (t01 + t12)));
+	sf::Vector2f m2 = (1.0f - tension) * (resultant(p2, p1) + t12 * (resultant(p3, p2) / t23 - resultant(p3, p1) / (t12 + t23)));
 
 	sf::Vector2f c0 = 2.0f * resultant(p1, p2) + m1 + m2;
-	sf::Vector2f c1 = -3.0f * resultant(p1, p2) - (2.0f * m1) - m2;
+	sf::Vector2f c1 = -3.0f * resultant(p1, p2) - m1 - m1 - m2;
 	sf::Vector2f c2 = m1;
-	sf::Vector2f c3 = static_cast<sf::Vector2f>(p1); // convert integer vector to floating vector for manipulation
+	sf::Vector2f c3 = p1;
 
-	sf::Vector2f point = c0 * static_cast<float>(pow(t, 3)) + c1 * static_cast<float>(pow(t, 2)) + c2 * t + c3;
+	sf::Vector2f point = c0 * t * t * t + c1 * t * t + c2 * t + c3;
 
 	return point;
 }
@@ -220,7 +219,7 @@ void Engine::onLeftClick(sf::Vector2f mousePosition) {
 
 	std::cout << "Added a point..." << std::endl;
 
-	std::chrono::milliseconds dura(250);
+	std::chrono::milliseconds dura(150);
 
 	std::this_thread::sleep_for(dura);
 
@@ -238,7 +237,7 @@ void Engine::onMiddleClick() {
 	this->clearPoints();
 	this->clearcPoints();
 
-	std::chrono::milliseconds dura(250);
+	std::chrono::milliseconds dura(150);
 
 	std::this_thread::sleep_for(dura);
 
@@ -283,7 +282,7 @@ void Engine::onRightClick() {
 		}
 	}
 
-	std::chrono::milliseconds dura(250);
+	std::chrono::milliseconds dura(150);
 
 	std::this_thread::sleep_for(dura);
 
