@@ -128,7 +128,9 @@ void Engine::drawPoint(sf::Vector2f position, sf::Vector2f scale, bool cPoint) {
 	this->Point.setScale(scale);
 	this->Point.setFillColor(sf::Color(255, 255, 255));
 
-	if (cPoint) { this->cPoints.push_back(this->Point); }
+	if (cPoint) { 
+		this->cPoints.push_back(this->Point); 
+	}
 	else {
 		this->Points.push_back(this->Point);
 	}
