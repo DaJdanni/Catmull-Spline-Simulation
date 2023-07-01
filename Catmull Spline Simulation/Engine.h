@@ -22,7 +22,13 @@ class Engine {
 	sf::Vector2i mouseScreenPosition;
 	sf::Vector2f mousePosView;
 
-	std::vector<sf::Vector2i> mousePositions;
+	std::vector<sf::Vector2f> mousePositions;
+
+	// Engine Objects:
+	std::vector<sf::CircleShape> Points;
+	std::vector<sf::CircleShape> cPoints;
+	sf::CircleShape Point;
+
 
 	sf::Font TextFont;
 
@@ -30,12 +36,11 @@ class Engine {
 
 	bool leftClickDB = false;
 	bool rightClickDB = false;
+	bool middleClickDB = false;
 
 	void initalizeVariables();
 	void initalizeWindow();
-	void onLeftClick(sf::Vector2i mousePosition);
-	void onRightClick();
-	void clearPoints();
+	void initalizePointConfig();
 
 public:
 
@@ -46,8 +51,20 @@ public:
 	// Accessors
 	const bool running() const;
 
-	void updateConsole();
+	void createCurve(sf::Vector2f p0, sf::Vector2f p1, sf::Vector2f p2, sf::Vector2f p3);
+
 	void updateMousePositions();
+	void onLeftClick(sf::Vector2f mousePosition);
+	void onRightClick();
+	void onMiddleClick();
+
+	void updateConsole();
+
+	void drawPoint(sf::Vector2f position, sf::Vector2f scale = sf::Vector2f(1.f, 1.f), bool cPoint = false);
+	void clearPoints();
+	void clearcPoints();
+	void renderPoints();
+	void rendercPoints();
 
 	void pollEvents();
 	void update();

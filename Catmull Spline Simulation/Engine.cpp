@@ -3,18 +3,26 @@
 
 void Engine::initalizeVariables() {
 	this->window = nullptr;
-	this->TextFont.loadFromFile("../Resource Files/TimesNewRoman.tff");
+	//this->TextFont.loadFromFile("TimesNewRoman.tff");
 }
 
 void Engine::initalizeWindow() {
 	// video settings
-	this->videoMode.width = 800;
-	this->videoMode.height = 600;
+	this->videoMode.width = 1920;
+	this->videoMode.height = 1080;
 	//this->videoMode.getDesktopMode() gets window resolution
 
-	this->window = new sf::RenderWindow(this->videoMode, "Game 1", sf::Style::Titlebar | sf::Style::Close);
+	this->window = new sf::RenderWindow(this->videoMode, "Catmull Splines", sf::Style::Titlebar | sf::Style::Close);
 
-	this->window->setFramerateLimit(60);
+	this->window->setFramerateLimit(144);
+}
+
+void Engine::initalizePointConfig() {
+	const float size = 7.5f;
+	this->Point = sf::CircleShape(size);
+	this->Point.setPosition(50.f, 50.f);
+	this->Point.setScale(sf::Vector2f(2.f, 2.f));
+	this->Point.setOrigin(size, size);
 }
 
 
@@ -23,6 +31,7 @@ void Engine::initalizeWindow() {
 Engine::Engine() {
 	this->initalizeVariables();
 	this->initalizeWindow();
+	this->initalizePointConfig();
 }
 
 Engine::~Engine() {
@@ -48,9 +57,11 @@ void Engine::pollEvents() {
 			break;
 		}
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-			this->onLeftClick(this->mouseWindowPosition);
+			this->onLeftClick(this->mousePosView);
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
 			this->onRightClick();
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Middle))
+			this->onMiddleClick();
 	}
 }
 
@@ -78,6 +89,9 @@ void Engine::render() { // Rendering
 	this->window->clear(sf::Color(0, 0, 0, 255));
 
 	// Draw game objects
+
+	this->renderPoints();
+	this->rendercPoints();
 
 	this->window->display();
 }
@@ -110,20 +124,51 @@ void Engine::updateMousePositions() {
 	this->mouseScreenPosition = sf::Mouse::getPosition();
 }
 
-// Catmull Logic:
+void Engine::drawPoint(sf::Vector2f position, sf::Vector2f scale, bool cPoint) {
+	this->Point.setPosition(position);
+	this->Point.setScale(scale);
+	this->Point.setFillColor(sf::Color(255, 255, 255));
 
-sf::Vector2f resultant(sf::Vector2i p, sf::Vector2i q) {
-	return static_cast<sf::Vector2f>(p) - static_cast<sf::Vector2f>(q);
+	if (cPoint) { this->cPoints.push_back(this->Point); }
+	else {
+		this->Points.push_back(this->Point);
+	}
 }
 
-double toMagnitude(sf::Vector2i p, sf::Vector2i q) {
+void Engine::rendercPoints() {
+	for (auto& i : this->cPoints) {
+		this->window->draw(i);
+	}
+}
+
+void Engine::renderPoints() { // Rendering all the points
+	for (auto& i : this->Points) {
+		this->window->draw(i);
+	}
+}
+
+void Engine::clearcPoints() {
+	this->cPoints.clear();
+}
+
+void Engine::clearPoints() {
+	this->Points.clear();
+}
+
+// Catmull Logic:
+
+sf::Vector2f resultant(sf::Vector2f p, sf::Vector2f q) {
+	return p - q;
+}
+
+double toMagnitude(sf::Vector2f p, sf::Vector2f q) {
 	return (sqrt(
 		pow(abs((p.x - q.x)), 2.f) +
 		pow(abs((p.y - q.y)), 2.f)
 	));
 }
 
-sf::Vector2i formula(sf::Vector2i p0, sf::Vector2i p1, sf::Vector2i p2, sf::Vector2i p3, float t) {
+sf::Vector2f formula(sf::Vector2f p0, sf::Vector2f p1, sf::Vector2f p2, sf::Vector2f p3, float t) {
 
 	// you'll notice a lot of static casts usage but basically:
 	// floating vectors are needed since they can be manipulated by arthimetic stuff or something like that
@@ -149,18 +194,29 @@ sf::Vector2i formula(sf::Vector2i p0, sf::Vector2i p1, sf::Vector2i p2, sf::Vect
 
 	sf::Vector2f point = c0 * static_cast<float>(pow(t, 3)) + c1 * static_cast<float>(pow(t, 2)) + c2 * t + c3;
 
-	return static_cast<sf::Vector2i>(point);
+	return point;
 }
 
-void Engine::onLeftClick(sf::Vector2i mousePosition) {
+void Engine::createCurve(sf::Vector2f p0, sf::Vector2f p1, sf::Vector2f p2, sf::Vector2f p3) {
+	for (float i = 0; i <= 1; i += 0.05f) {
+		sf::Vector2f point = formula(p0, p1, p2, p3, i);
 
-	if (this->leftClickDB == true) { return; }
+		this->drawPoint(point, sf::Vector2f(0.25f, 0.25f), true);
+	}
+}
+
+void Engine::onLeftClick(sf::Vector2f mousePosition) {
+
+	if ((this->leftClickDB == true) || (this->rightClickDB == true) || (this->middleClickDB == true)) { return; }
 
 	this->leftClickDB = true;
 
 	this->numberOfPoints += 1;
 
-	this->mousePositions.push_back(mousePosition);
+	std::cout << mousePosition.x << "|" << mousePosition.y << std::endl;
+
+	this->drawPoint(mousePosition); // draw the point on the screen
+	this->mousePositions.push_back(mousePosition); // save the point in vector
 
 	std::cout << "Added a point..." << std::endl;
 
@@ -171,19 +227,60 @@ void Engine::onLeftClick(sf::Vector2i mousePosition) {
 	this->leftClickDB = false;
 }
 
+void Engine::onMiddleClick() {
+
+	if ((this->leftClickDB == true) || (this->rightClickDB == true) || (this->middleClickDB == true)) { return; }
+
+	this->middleClickDB = true;
+
+	this->numberOfPoints = 0;
+	this->mousePositions.clear();
+	this->clearPoints();
+	this->clearcPoints();
+
+	std::chrono::milliseconds dura(250);
+
+	std::this_thread::sleep_for(dura);
+
+	this->middleClickDB = false;
+
+}
+
 void Engine::onRightClick() {
 
-	if (this->rightClickDB == true) { return; }
+	if ((this->leftClickDB == true) || (this->rightClickDB == true) || (this->middleClickDB == true)) { return; }
 
 	this->rightClickDB = true;
 
 	size_t size = this->mousePositions.size();
 
-	std::cout << size << std::endl;
+	std::cout << "# of Mouse positions: " << size << std::endl;
 
 	if (size >= 2) {
-		sf::Vector2i p0 = sf::Vector2i(this->mousePositions.front().x - 50, this->mousePositions.front().y);
-		sf::Vector2i p3 = sf::Vector2i(this->mousePositions.back().x + 50, this->mousePositions.back().y);
+
+		this->clearcPoints();
+
+		sf::Vector2f p0 = sf::Vector2f(this->mousePositions.front().x - 50.f, this->mousePositions.front().y);
+		sf::Vector2f p3 = sf::Vector2f(this->mousePositions.back().x + 50.f, this->mousePositions.back().y);
+
+		for (size_t i = 0; i < (size - 1); i++) {
+			if (((i - 1) == -1) && ((i + 2) == size)) {
+				std::cout << "This vector only has 2 indexes." << std::endl;
+				this->createCurve(p0, this->mousePositions.at(i), this->mousePositions.at(i + 1), p3);
+			} 
+			else if ((i - 1) == -1) {
+				std::cout << "This index (" << i << ") is the beginning of the domain." << std::endl;
+				this->createCurve(p0, this->mousePositions.at(i), this->mousePositions.at(i + 1), this->mousePositions.at(i + 2));
+			}
+			else if (((i + 2) == size) || ((i + 1) == size)) {
+				std::cout << "This index (" << i << ") is the end of the domain." << std::endl;
+				this->createCurve(this->mousePositions.at(i - 1), this->mousePositions.at(i), this->mousePositions.at(i + 1), p3);
+			}
+			else {
+				std::cout << "Index: " << i << std::endl;
+				this->createCurve(this->mousePositions.at(i - 1), this->mousePositions.at(i), this->mousePositions.at(i + 1), this->mousePositions.at(i + 2));
+			}
+		}
 	}
 
 	std::chrono::milliseconds dura(250);
